@@ -2,15 +2,17 @@ import secrets
 
 from django.db import models
 from django.utils import timezone
-from fcm_django.models import FCMDevice
+from fcm_django.models import AbstractFCMDevice
+from django.utils.translation import gettext_lazy as _
 
 from ApiCore.settings import ATTESTATION_NONCE_EXPIRY_SECONDS
 from ApiApp import utils
 
 
-class AttestedFCMDevice(FCMDevice):
-    attest_nonce = models.CharField(max_length=255, null=True, blank=True)
-    attest_nonce_created_at = models.DateTimeField(null=True, blank=True)
+class AttestedFCMDevice(AbstractFCMDevice):
+    registration_id = models.TextField(verbose_name=_("Registration token"), unique=False, null=True)
+    attest_nonce = models.CharField(verbose_name=_("Attest nonce"), max_length=255, null=True, blank=True)
+    attest_nonce_created_at = models.DateTimeField(verbose_name=_("Attest nonce created at"), null=True, blank=True)
 
     class Meta:
         indexes = []

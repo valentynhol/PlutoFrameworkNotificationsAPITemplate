@@ -1,7 +1,5 @@
-from rest_framework import permissions, views, authentication
+from rest_framework import permissions, views, status
 from rest_framework.response import Response
-
-from firebase_admin import messaging
 
 from ApiApp.serializers import DeviceRegisterSerializer, NonceRequestSerializer, FCMTokenSerializer
 from ApiApp.auth import DeviceJWTAuthentication
@@ -56,7 +54,7 @@ class NonceView(views.APIView):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        device = serializer.create_or_get_device()
+        device = serializer.save()
         nonce = device.generate_nonce()
 
         return Response({"nonce": nonce})

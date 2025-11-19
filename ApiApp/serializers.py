@@ -1,17 +1,15 @@
-from django.contrib.auth.models import User
-
 from rest_framework import serializers
+from firebase_admin import messaging
 
 from ApiApp.models import AttestedFCMDevice
-
-from ApiApp.utils import verify_attestation, generate_device_jwt
+from ApiApp.utils import generate_device_jwt
 
 
 class NonceRequestSerializer(serializers.Serializer):
     device_uuid = serializers.CharField()
     platform = serializers.ChoiceField(choices=["android", "ios"])
 
-    def create_or_get_device(self):
+    def save(self):
         """
         Get an existing device or create a new one.
         Returns the AttestedFCMDevice instance.
@@ -23,6 +21,9 @@ class NonceRequestSerializer(serializers.Serializer):
             device_id=device_uuid,
             defaults={"type": platform}
         )
+
+        device.save()
+
         return device
 
 

@@ -26,8 +26,23 @@ def verify_attestation(attest_token: str, nonce: bytes, platform: Literal["andro
 
         try:
             attestation.verify()
+            print("✅ Attestation verified successfully")
+            print(f"DEBUG: Attestation data = {attestation.data}")
             return True
-        except PyAttestException:
+
+        except PyAttestException as e:
+            print("❌ Attestation verification failed:")
+            print(f"    Type: {type(e).__name__}")
+            print(f"    Message: {e}")
+            if "decrypt" in str(e).lower():
+                print("    HINT: Likely wrong DECRYPTION_KEY in settings.")
+            elif "signature" in str(e).lower():
+                print("    HINT: Possible mismatch with VERIFICATION_KEY or invalid JWS.")
+            return False
+
+        except Exception as e:
+            print("❌ Unexpected error during attestation verification:")
+            print(repr(e))
             return False
     elif platform == "ios":
         # TODO

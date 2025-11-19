@@ -30,6 +30,6 @@ urlpatterns = [
     path('api/nonce/', views.NonceView.as_view(), name='nonce_obtain'),
     path('api/token/', views.DeviceRegisterView.as_view(), name='obtain_token_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('api/fcm/token-update', views.FCMTokenUpdateView.as_view(), name='fcm_token_update'),
+    path('api/fcm/token-update/', views.FCMTokenUpdateView.as_view(), name='fcm_token_update'),
     path('admin/', admin.site.urls),
 ]

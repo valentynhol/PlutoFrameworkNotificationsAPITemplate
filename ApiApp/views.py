@@ -1,3 +1,4 @@
+from firebase_admin import messaging
 from rest_framework import permissions, views, status
 from rest_framework.response import Response
 
@@ -40,6 +41,14 @@ class FCMTokenUpdateView(views.APIView):
 
             device.registration_id = fcm_token
             device.save(update_fields=['registration_id'])
+
+            # Subscribe to necessary FCM topics
+            topics = ["global", device.type]
+            for topic in topics:
+                try:
+                    messaging.subscribe_to_topic([device.registration_id], topic)
+                except Exception as e:
+                    print(f"Failed to subscribe device {device.id} to topic {topic}: {e}")
 
             return Response({'message': 'Token updated successfully.'}, status=status.HTTP_200_OK)
 

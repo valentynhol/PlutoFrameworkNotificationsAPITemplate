@@ -53,8 +53,6 @@ class AttestedFCMDevice(AbstractFCMDevice):
         if not self.is_nonce_valid():
             return False
 
-        print(f"DEBUG: nonce: {self.attest_nonce}")
-        print(f"DEBUG: attest token: {attest_token}")
         verified = utils.verify_attestation(attest_token, base64.urlsafe_b64decode(self.attest_nonce + "=="), self.type)
 
         if verified:

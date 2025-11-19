@@ -19,32 +19,16 @@ def verify_attestation(attest_token: str, nonce: bytes, platform: Literal["andro
     Returns:
         bool: True if verified, False if not
     """
-    print("INFO: Verifying attestation")
-    print(f"DEBUG: encrypted nonce: {nonce}")
-
     if platform == "android":
         attestation = Attestation(attest_token, nonce, PLAY_INTEGRITY_CONFIG)
 
         try:
             attestation.verify()
-            print("✅ Attestation verified successfully")
-            print(f"DEBUG: Attestation data = {attestation.data}")
             return True
 
-        except PyAttestException as e:
-            print("❌ Attestation verification failed:")
-            print(f"    Type: {type(e).__name__}")
-            print(f"    Message: {e}")
-            if "decrypt" in str(e).lower():
-                print("    HINT: Likely wrong DECRYPTION_KEY in settings.")
-            elif "signature" in str(e).lower():
-                print("    HINT: Possible mismatch with VERIFICATION_KEY or invalid JWS.")
+        except PyAttestException:
             return False
 
-        except Exception as e:
-            print("❌ Unexpected error during attestation verification:")
-            print(repr(e))
-            return False
     elif platform == "ios":
         # TODO
         return False # do not accept requests from ios devices for now

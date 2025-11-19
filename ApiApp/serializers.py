@@ -65,14 +65,6 @@ class DeviceRegisterSerializer(serializers.Serializer):
             }
         )
 
-        # Subscribe to necessary FCM topics
-        topics = ["global", device.type]
-        for topic in topics:
-            try:
-                messaging.subscribe_to_topic([device.registration_id], topic)
-            except Exception as e:
-                print(f"Failed to subscribe device {device.id} to topic {topic}: {e}")
-
         access, refresh = generate_device_jwt(device_uuid, platform)
 
         return {

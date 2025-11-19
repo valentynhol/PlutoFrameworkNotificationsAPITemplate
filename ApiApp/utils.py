@@ -20,6 +20,7 @@ def verify_attestation(attest_token: str, nonce: bytes, platform: Literal["andro
         bool: True if verified, False if not
     """
     print("INFO: Verifying attestation")
+    print(f"DEBUG: encrypted nonce: {nonce}")
 
     if platform == "android":
         attestation = Attestation(attest_token, nonce, PLAY_INTEGRITY_CONFIG)

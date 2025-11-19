@@ -1,3 +1,4 @@
+import base64
 import secrets
 
 from django.db import models
@@ -54,7 +55,7 @@ class AttestedFCMDevice(AbstractFCMDevice):
 
         print(f"DEBUG: nonce: {self.attest_nonce}")
         print(f"DEBUG: attest token: {attest_token}")
-        verified = utils.verify_attestation(attest_token, self.attest_nonce.encode(), self.type)
+        verified = utils.verify_attestation(attest_token, base64.urlsafe_b64decode(self.attest_nonce + "=="), self.type)
 
         if verified:
             self.clear_nonce()

@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from firebase_admin import messaging
 
 from ApiApp.models import AttestedFCMDevice
 from ApiApp.utils import generate_device_jwt

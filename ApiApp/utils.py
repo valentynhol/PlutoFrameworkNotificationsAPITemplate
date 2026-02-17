@@ -4,7 +4,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from pyattest.attestation import Attestation
 from pyattest.exceptions import PyAttestException
 
-from ApiCore.settings import PLAY_INTEGRITY_CONFIG
+from ApiCore.settings import PLAY_INTEGRITY_CONFIG, APP_ATTEST_CONFIG
 
 
 def verify_attestation(attest_token: str, nonce: bytes, platform: Literal["android", "ios"]) -> bool:
@@ -19,25 +19,21 @@ def verify_attestation(attest_token: str, nonce: bytes, platform: Literal["andro
     Returns:
         bool: True if verified, False if not
     """
-    if platform == "android":
-        attestation = Attestation(attest_token, nonce, PLAY_INTEGRITY_CONFIG)
+    attestation = Attestation(
+        attest_token,
+        nonce,
+        PLAY_INTEGRITY_CONFIG if platform == "android" else APP_ATTEST_CONFIG
+    )
 
-        try:
-            attestation.verify()
-            return True
+    try:
+        attestation.verify()
+        return True
 
-        except PyAttestException:
-            return False
-
-    elif platform == "ios":
-        # TODO
-        return False # do not accept requests from ios devices for now
-    else:
-        # does not support web push notifications
+    except PyAttestException:
         return False
 
 
-def generate_device_jwt(uuid: str, platform: Literal["android", "ios"]) -> (str, str):
+def generate_device_jwt(uuid: str, platform: Literal["android", "ios"]) -> tuple[str, str]:
     """
     Generate JWT access and refresh token pair for a device
 

@@ -17,6 +17,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from firebase_admin import initialize_app, credentials
 from pyattest.configs.google_play_integrity_api import GooglePlayIntegrityApiConfig
+from pyattest.configs.apple import AppleConfig
 
 # Load all .env variables
 load_dotenv()
@@ -40,21 +41,32 @@ ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS").split(",")
 # App attestation
 
 APK_NAME = os.getenv('APK_NAME')
-ATTESTATION_DECRYPTION_KEY = os.getenv('ATTESTATION_DECRYPTION_KEY')
-ATTESTATION_VERIFICATION_KEY = os.getenv('ATTESTATION_VERIFICATION_KEY')
-ATTESTATION_APP_SIGNING_KEY = os.getenv('ATTESTATION_APP_SIGNING_KEY')
 ATTESTATION_NONCE_EXPIRY_SECONDS = 120
 
+GOOGLE_PLAY_INTEGRITY_DECRYPTION_KEY = os.getenv('GOOGLE_PLAY_INTEGRITY_DECRYPTION_KEY')
+GOOGLE_PLAY_INTEGRITY_VERIFICATION_KEY = os.getenv('GOOGLE_PLAY_INTEGRITY_VERIFICATION_KEY')
+GOOGLE_PLAY_INTEGRITY_APP_SIGNING_KEY = os.getenv('GOOGLE_PLAY_INTEGRITY_APP_SIGNING_KEY')
+
+APP_ATTEST_KEY_ID = os.getenv('APP_ATTEST_KEY_ID')
+APP_ATTEST_APP_ID = os.getenv('APP_ATTEST_APP_ID')
+
 PLAY_INTEGRITY_CONFIG = GooglePlayIntegrityApiConfig(
-    decryption_key=ATTESTATION_DECRYPTION_KEY,
-    verification_key=ATTESTATION_VERIFICATION_KEY,
+    decryption_key=GOOGLE_PLAY_INTEGRITY_DECRYPTION_KEY,
+    verification_key=GOOGLE_PLAY_INTEGRITY_VERIFICATION_KEY,
     apk_package_name=APK_NAME,
     production=not DEBUG,
     allow_non_play_distribution=DEBUG,
     verify_code_signature_hex=[
-        ATTESTATION_APP_SIGNING_KEY
+        GOOGLE_PLAY_INTEGRITY_APP_SIGNING_KEY
     ]
 )
+
+APP_ATTEST_CONFIG = AppleConfig(
+    key_id=APP_ATTEST_KEY_ID,
+    app_id=APP_ATTEST_APP_ID,
+    production=not DEBUG
+)
+# TODO
 
 # Application definition
 

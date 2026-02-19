@@ -14,8 +14,8 @@ class DeviceRegisterSerializer(serializers.Serializer):
     nonce = serializers.CharField(max_length=255)
     device_id = serializers.CharField(max_length=255)
     platform = serializers.ChoiceField(choices=['android', 'ios'])
-    attestation = serializers.CharField(required=False)
-    assertion = serializers.CharField(required=False)
+    attestation = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    assertion = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
     access = serializers.CharField(read_only=True)
     refresh = serializers.CharField(read_only=True)

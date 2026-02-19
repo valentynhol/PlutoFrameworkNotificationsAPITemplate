@@ -34,7 +34,7 @@ class FCMTokenUpdateView(views.APIView):
             fcm_token = serializer.validated_data['fcm_token']
 
             try:
-                device = AttestedFCMDevice.objects.get(device_id=request.device_uuid)
+                device = AttestedFCMDevice.objects.get(device_id=request.device_id)
             except AttestedFCMDevice.DoesNotExist:
                 # shouldn't happen
                 return Response({'error': 'Device not found.'}, status=status.HTTP_404_NOT_FOUND)

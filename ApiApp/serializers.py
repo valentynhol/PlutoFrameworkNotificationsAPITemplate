@@ -1,8 +1,10 @@
+import logging
 from rest_framework import serializers
 
 from ApiApp.models import AttestedFCMDevice, Nonce
 from ApiApp.utils import generate_device_jwt, AttestationHandler
 
+logger = logging.getLogger(__name__)
 
 class FCMTokenSerializer(serializers.Serializer):
     fcm_token = serializers.CharField(max_length=255)
@@ -19,40 +21,72 @@ class DeviceRegisterSerializer(serializers.Serializer):
     refresh = serializers.CharField(read_only=True)
 
     def validate(self, attrs):
+        logger.debug("DeviceRegisterSerializer.validate called")
+        logger.debug(f"Incoming attrs keys: {list(attrs.keys())}")
+
         nonce = attrs.get('nonce')
         device_id = attrs.get("device_id")
         platform = attrs.get("platform")
         attestation = attrs.get("attestation")
         assertion = attrs.get("assertion")
 
+        logger.debug(f"nonce={nonce}")
+        logger.debug(f"device_id={device_id}")
+        logger.debug(f"platform={platform}")
+        logger.debug(f"has_attestation={bool(attestation)}")
+        logger.debug(f"has_assertion={bool(assertion)}")
+
         try:
             nonce_record = Nonce.objects.get(nonce=nonce)
+            logger.debug("Nonce record found")
 
             if not nonce_record.is_valid():
+                logger.debug("Nonce is not valid")
                 raise serializers.ValidationError("Nonce is not valid.")
+
         except Nonce.DoesNotExist:
+            logger.debug("Nonce does not exist in DB")
             raise serializers.ValidationError("Nonce does not exist.")
 
         public_key = None
         try:
             device = AttestedFCMDevice.objects.get(device_id=device_id, type=platform)
             public_key = device.get_public_key()
+            logger.debug("Existing device found, public key loaded")
         except AttestedFCMDevice.DoesNotExist:
-            pass
+            logger.debug("No existing device found")
 
-        handler = AttestationHandler(nonce, platform, attestation, assertion, device_id, public_key)
-        if not handler.multiplatform_verify():
-            raise serializers.ValidationError("Attestation verification failed.")
+        try:
+            logger.debug("Initializing AttestationHandler")
+            handler = AttestationHandler(nonce, platform, attestation, assertion, device_id, public_key)
+        except Exception as e:
+            logger.exception("AttestationHandler init failed")
+            raise serializers.ValidationError(f"Handler init failed: {str(e)}")
+
+        try:
+            logger.debug("Starting multiplatform_verify")
+            verified = handler.multiplatform_verify()
+            logger.debug(f"Verification result: {verified}")
+
+            if not verified:
+                raise serializers.ValidationError("Attestation verification failed.")
+
+        except Exception as e:
+            logger.exception("Verification threw exception")
+            raise serializers.ValidationError(f"Verification error: {str(e)}")
 
         if platform == 'ios' and public_key is None:
+            logger.debug("Creating new iOS device record with public key")
             device = AttestedFCMDevice.objects.create(
                 device_id=device_id,
                 type=platform
             )
             device.set_public_key(handler.get_public_key())
 
+        logger.debug("Consuming nonce")
         nonce_record.consume()
 
+        logger.debug("Validation successful")
         return attrs
 
     def create(self, validated_data):

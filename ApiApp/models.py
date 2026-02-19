@@ -1,61 +1,59 @@
-import base64
-import secrets
-
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePublicKey
 from django.db import models
 from django.utils import timezone
 from fcm_django.models import AbstractFCMDevice
 from django.utils.translation import gettext_lazy as _
 
+from ApiApp.managers import NonceManager
 from ApiCore.settings import ATTESTATION_NONCE_EXPIRY_SECONDS
-from ApiApp import utils
 
 
 class AttestedFCMDevice(AbstractFCMDevice):
     registration_id = models.TextField(verbose_name=_("Registration token"), unique=False, null=True)
-    attest_nonce = models.CharField(verbose_name=_("Attest nonce"), max_length=255, null=True, blank=True)
-    attest_nonce_created_at = models.DateTimeField(verbose_name=_("Attest nonce created at"), null=True, blank=True)
+    public_key_pem = models.BinaryField(verbose_name=_("Public key (iOS)"))
 
     class Meta:
         indexes = []
         verbose_name = "Attested FCM device"
         verbose_name_plural = "Attested FCM devices"
 
-    def generate_nonce(self, length: int = 32) -> str:
-        """
-        Generate a cryptographically secure random nonce,
-        store it in the device, and return it.
-        """
-        self.attest_nonce = secrets.token_urlsafe(length)
-        self.attest_nonce_created_at = timezone.now()
-        self.save(update_fields=["attest_nonce", "attest_nonce_created_at"])
-        return self.attest_nonce
+    def set_public_key(self, public_key: EllipticCurvePublicKey):
+        self.public_key_pem = public_key.public_bytes(
+            encoding=serialization.Encoding.DER,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo,
+        )
+        self.save(update_fields=["public_key_pem"])
+
+    def get_public_key(self):
+        return serialization.load_der_public_key(self.public_key_pem)
+
+
+class Nonce(models.Model):
+    nonce = models.CharField(verbose_name=_("Nonce"), max_length=255, primary_key=True)
+    created_at = models.DateTimeField(verbose_name=_("Nonce created at"), db_index=True)
+    consumed = models.BooleanField(verbose_name=_("Consumed"), default=False)
+
+    objects = NonceManager()
+
+    class Meta:
+        verbose_name = "Nonce"
+        verbose_name_plural = "Nonces"
 
     def is_nonce_valid(self) -> bool:
         """
-        Check if the nonce exists and is not expired.
-        Expiry is controlled by NONCE_EXPIRY_SECONDS in settings.
+        Check whether the nonce is not consumed or expired.
+        Expiration time is set by ATTESTATION_NONCE_EXPIRY_SECONDS in ApiCore.settings.
         """
-        if not self.attest_nonce or not self.attest_nonce_created_at:
-            return False
+        age = (timezone.now() - self.created_at).total_seconds()
+        return not self.consumed and age <= ATTESTATION_NONCE_EXPIRY_SECONDS
 
-        age = (timezone.now() - self.attest_nonce_created_at).total_seconds()
-        return age <= ATTESTATION_NONCE_EXPIRY_SECONDS
-
-    def clear_nonce(self):
-        self.attest_nonce = None
-        self.attest_nonce_created_at = None
-        self.save(update_fields=["attest_nonce", "attest_nonce_created_at"])
-
-    def verify_attestation(self, attest_token: str) -> bool:
+    def consume(self) -> str:
         """
-        Verify attestation for this device using its stored nonce.
+        Consume the nonce from the device.
+        Returns:
+             consumed nonce
         """
-        if not self.is_nonce_valid():
-            return False
-
-        verified = utils.verify_attestation(attest_token, base64.urlsafe_b64decode(self.attest_nonce + "=="), self.type)
-
-        if verified:
-            self.clear_nonce()
-
-        return verified
+        self.consumed = True
+        self.save(update_fields=["consumed"])
+        return self.nonce

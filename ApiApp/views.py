@@ -2,10 +2,10 @@ from firebase_admin import messaging
 from rest_framework import permissions, views, status
 from rest_framework.response import Response
 
-from ApiApp.serializers import DeviceRegisterSerializer, NonceRequestSerializer, FCMTokenSerializer
+from ApiApp.serializers import DeviceRegisterSerializer, FCMTokenSerializer
 from ApiApp.auth import DeviceJWTAuthentication
 from ApiApp.permissions import IsRegisteredDevice
-from ApiApp.models import AttestedFCMDevice
+from ApiApp.models import AttestedFCMDevice, Nonce
 
 
 class DeviceRegisterView(views.APIView):
@@ -57,13 +57,8 @@ class FCMTokenUpdateView(views.APIView):
 
 class NonceView(views.APIView):
     permission_classes = [permissions.AllowAny]
-    serializer_class = NonceRequestSerializer
 
-    def post(self, request):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        device = serializer.save()
-        nonce = device.generate_nonce()
+    def post(self, _):
+        nonce = Nonce.objects.create_nonce()
 
         return Response({"nonce": nonce})

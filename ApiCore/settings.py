@@ -17,7 +17,6 @@ from pathlib import Path
 from dotenv import load_dotenv
 from firebase_admin import initialize_app, credentials
 from pyattest.configs.google_play_integrity_api import GooglePlayIntegrityApiConfig
-from pyattest.configs.apple import AppleConfig
 
 # Load all .env variables
 load_dotenv()

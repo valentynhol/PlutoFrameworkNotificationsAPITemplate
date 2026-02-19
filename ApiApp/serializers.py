@@ -20,6 +20,12 @@ class DeviceRegisterSerializer(serializers.Serializer):
     access = serializers.CharField(read_only=True)
     refresh = serializers.CharField(read_only=True)
 
+    def to_internal_value(self, data):
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.debug(f"Raw incoming data: {data}")
+        return super().to_internal_value(data)
+
     def validate(self, attrs):
         logger.debug("DeviceRegisterSerializer.validate called")
         logger.debug(f"Incoming attrs keys: {list(attrs.keys())}")

@@ -11,7 +11,7 @@ from ApiCore.settings import ATTESTATION_NONCE_EXPIRY_SECONDS
 
 class AttestedFCMDevice(AbstractFCMDevice):
     registration_id = models.TextField(verbose_name=_("Registration token"), unique=False, null=True)
-    public_key_pem = models.BinaryField(verbose_name=_("Public key (iOS)"))
+    public_key_pem = models.BinaryField(verbose_name=_("Public key (iOS)"), null=True, blank=True)
 
     class Meta:
         indexes = []

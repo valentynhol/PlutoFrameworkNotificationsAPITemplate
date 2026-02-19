@@ -20,12 +20,6 @@ class DeviceRegisterSerializer(serializers.Serializer):
     access = serializers.CharField(read_only=True)
     refresh = serializers.CharField(read_only=True)
 
-    def to_internal_value(self, data):
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.debug(f"Raw incoming data: {data}")
-        return super().to_internal_value(data)
-
     def validate(self, attrs):
         logger.debug("DeviceRegisterSerializer.validate called")
         logger.debug(f"Incoming attrs keys: {list(attrs.keys())}")
@@ -46,7 +40,7 @@ class DeviceRegisterSerializer(serializers.Serializer):
             nonce_record = Nonce.objects.get(nonce=nonce)
             logger.debug("Nonce record found")
 
-            if not nonce_record.is_valid():
+            if not nonce_record.is_nonce_valid():
                 logger.debug("Nonce is not valid")
                 raise serializers.ValidationError("Nonce is not valid.")
 

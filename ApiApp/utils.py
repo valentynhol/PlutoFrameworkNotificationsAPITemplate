@@ -2,6 +2,7 @@ import base64
 import logging
 from typing import Literal
 
+from cryptography import x509
 from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePublicKey
 from pyattest.assertion import Assertion
 from pyattest.configs.apple import AppleConfig
@@ -176,7 +177,7 @@ class AttestationHandler:
                 logger.error("No certificates returned in attestation data")
                 return False
 
-            self._public_key = certs[0].public_key
+            self._public_key = x509.load_der_x509_certificate(certs[0].dump()).public_key()
             logger.debug("iOS attestation verification SUCCESS, public key extracted")
 
             return True

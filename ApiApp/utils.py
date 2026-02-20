@@ -62,7 +62,7 @@ class AttestationHandler:
             )
 
         try:
-            self._nonce = base64.urlsafe_b64decode(nonce + "==")
+            self._nonce = urlsafe_b64decode_padded(nonce)
             logger.debug("Nonce base64 decoded successfully")
         except Exception:
             logger.exception("Nonce base64 decode failed")
@@ -73,7 +73,7 @@ class AttestationHandler:
         self._assertion_token = assertion_token
 
         try:
-            self._key_id = base64.urlsafe_b64decode(key_id + "==")
+            self._key_id = urlsafe_b64decode_padded(key_id)
         except Exception:
             logger.exception("key_id base64 decode failed")
             raise
@@ -163,7 +163,7 @@ class AttestationHandler:
             logger.debug("AppleConfig created")
 
             attestation = Attestation(
-                self._attestation_token,
+                urlsafe_b64decode_padded(self._attestation_token),
                 self._nonce,
                 config
             )
@@ -208,9 +208,6 @@ class AttestationHandler:
         )
 
         try:
-            decoded_assertion = base64.urlsafe_b64decode(self._assertion_token + "==")
-            logger.debug(f"Assertion decoded | length={len(decoded_assertion)} bytes")
-
             config = AppleConfig(
                 self._key_id,
                 APP_ATTEST_APP_ID,
@@ -218,7 +215,7 @@ class AttestationHandler:
             )
 
             assertion = Assertion(
-                decoded_assertion,
+                urlsafe_b64decode_padded(self._assertion_token),
                 self._nonce,
                 self._public_key,
                 config
@@ -261,3 +258,8 @@ def generate_device_jwt(device_id: str, platform: Literal["android", "ios"]) -> 
 
     access = refresh.access_token
     return str(access), str(refresh)
+
+
+def urlsafe_b64decode_padded(s: str) -> bytes:
+    s += '=' * (-len(s) % 4)
+    return base64.urlsafe_b64decode(s)

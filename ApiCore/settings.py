@@ -52,7 +52,7 @@ PLAY_INTEGRITY_CONFIG = GooglePlayIntegrityApiConfig(
     verification_key=GOOGLE_PLAY_INTEGRITY_VERIFICATION_KEY,
     apk_package_name=APK_NAME,
     production=not DEBUG,
-    allow_non_play_distribution=DEBUG,
+    allow_non_play_distribution=True,
     verify_code_signature_hex=[
         GOOGLE_PLAY_INTEGRITY_APP_SIGNING_KEY
     ]
@@ -209,6 +209,6 @@ LOGGING = {
 
     "root": {
         "handlers": ["console"],
-        "level": "DEBUG",
+        "level": "DEBUG" if settings.DEBUG else "INFO",
     },
 }

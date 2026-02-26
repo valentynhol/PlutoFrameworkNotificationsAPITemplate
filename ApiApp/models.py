@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePublicKey
 from django.db import models
@@ -40,20 +42,28 @@ class Nonce(models.Model):
         verbose_name = "Nonce"
         verbose_name_plural = "Nonces"
 
-    def is_nonce_valid(self) -> bool:
+    def consume(self) -> bool:
         """
-        Check whether the nonce is not consumed or expired.
-        Expiration time is set by ATTESTATION_NONCE_EXPIRY_SECONDS in ApiCore.settings.
-        """
-        age = (timezone.now() - self.created_at).total_seconds()
-        return not self.consumed and age <= ATTESTATION_NONCE_EXPIRY_SECONDS
-
-    def consume(self) -> str:
-        """
-        Consume the nonce from the device.
+        Consume the nonce if valid.
         Returns:
-             consumed nonce
+             bool: True if the nonce is consumed, False otherwise.
         """
-        self.consumed = True
-        self.save(update_fields=["consumed"])
-        return self.nonce
+        cutoff = timezone.now() - timedelta(
+            seconds=ATTESTATION_NONCE_EXPIRY_SECONDS
+        )
+
+        updated = (
+            Nonce.objects
+            .filter(
+                nonce=self.nonce,
+                consumed=False,
+                created_at__gte=cutoff
+            )
+            .update(consumed=True)
+        )
+
+        if updated == 1:
+            self.consumed = True
+            return True
+
+        return False

@@ -40,7 +40,7 @@ class DeviceRegisterSerializer(serializers.Serializer):
             nonce_record = Nonce.objects.get(nonce=nonce)
             logger.debug("Nonce record found")
 
-            if not nonce_record.is_nonce_valid():
+            if not nonce_record.consume():
                 logger.debug("Nonce is not valid")
                 raise serializers.ValidationError("Nonce is not valid.")
 
@@ -82,9 +82,6 @@ class DeviceRegisterSerializer(serializers.Serializer):
                 type=platform
             )
             device.set_public_key(handler.get_public_key())
-
-        logger.debug("Consuming nonce")
-        nonce_record.consume()
 
         logger.debug("Validation successful")
         return attrs

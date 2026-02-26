@@ -1,3 +1,5 @@
+import logging
+
 from firebase_admin import messaging
 from rest_framework import permissions, views, status
 from rest_framework.response import Response
@@ -6,6 +8,8 @@ from ApiApp.serializers import DeviceRegisterSerializer, FCMTokenSerializer
 from ApiApp.auth import DeviceJWTAuthentication
 from ApiApp.permissions import IsRegisteredDevice
 from ApiApp.models import AttestedFCMDevice, Nonce
+
+logger = logging.getLogger(__name__)
 
 
 class DeviceRegisterView(views.APIView):
@@ -59,6 +63,8 @@ class NonceView(views.APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, _):
+        deleted = Nonce.objects.cleanup()
+        logger.debug(f"Deleted {deleted} nonce records.")
         nonce = Nonce.objects.create_nonce()
 
         return Response({"nonce": nonce})

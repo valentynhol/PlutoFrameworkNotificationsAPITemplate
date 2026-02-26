@@ -59,6 +59,17 @@ PLAY_INTEGRITY_CONFIG = GooglePlayIntegrityApiConfig(
     ]
 )
 
+# Auth
+
+JWT_ACCESS_TOKEN_LIFETIME_SECONDS = 60 * 5
+JWT_REFRESH_TOKEN_LIFETIME_SECONDS = 60 * 60 * 24 * 20
+
+# TODO: remove
+# DEBUG .ENV EXPOSURE
+if DEBUG:
+    JWT_ACCESS_TOKEN_LIFETIME_SECONDS = int(os.getenv('JWT_ACCESS_TTL'))
+    JWT_REFRESH_TOKEN_LIFETIME_SECONDS = int(os.getenv('JWT_REFRESH_TTL'))
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -103,7 +114,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'ApiCore.wsgi.application'
-
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases

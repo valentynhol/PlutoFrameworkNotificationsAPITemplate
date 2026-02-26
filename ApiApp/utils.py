@@ -1,5 +1,6 @@
 import base64
 import logging
+from datetime import timedelta
 from typing import Literal
 
 from cryptography import x509
@@ -10,7 +11,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from pyattest.attestation import Attestation
 from pyattest.exceptions import PyAttestException
 
-from ApiCore.settings import PLAY_INTEGRITY_CONFIG, APP_ATTEST_APP_ID, DEBUG
+from ApiCore.settings import PLAY_INTEGRITY_CONFIG, APP_ATTEST_APP_ID, DEBUG, JWT_ACCESS_TOKEN_LIFETIME_SECONDS, \
+    JWT_REFRESH_TOKEN_LIFETIME_SECONDS
 
 logger = logging.getLogger(__name__)
 
@@ -258,6 +260,10 @@ def generate_device_jwt(device_id: str, platform: Literal["android", "ios"]) -> 
     refresh['type'] = platform
 
     access = refresh.access_token
+
+    access.set_exp(lifetime=timedelta(seconds=JWT_ACCESS_TOKEN_LIFETIME_SECONDS))
+    refresh.set_exp(lifetime=timedelta(seconds=JWT_REFRESH_TOKEN_LIFETIME_SECONDS))
+
     return str(access), str(refresh)
 
 

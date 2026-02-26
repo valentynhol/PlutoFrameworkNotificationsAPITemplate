@@ -28,6 +28,9 @@ class AttestedFCMDevice(AbstractFCMDevice):
         self.save(update_fields=["public_key_pem"])
 
     def get_public_key(self):
+        if self.public_key_pem is None:
+            return None
+
         return serialization.load_der_public_key(self.public_key_pem)
 
 

@@ -31,7 +31,7 @@ class AttestedFCMDevice(AbstractFCMDevice):
         if self.public_key_pem is None:
             return None
 
-        return serialization.load_der_public_key(self.public_key_pem)
+        return serialization.load_der_public_key(bytes(self.public_key_pem))
 
 
 class Nonce(models.Model):

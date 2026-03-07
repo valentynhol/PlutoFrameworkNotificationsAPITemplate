@@ -1,5 +1,6 @@
 import base64
 import logging
+from hashlib import sha256
 from datetime import timedelta
 from typing import Literal
 
@@ -219,7 +220,7 @@ class AttestationHandler:
 
             assertion = Assertion(
                 urlsafe_b64decode_padded(self._assertion_token),
-                self._nonce,
+                sha256(self._nonce).digest(),
                 self._public_key,
                 config
             )

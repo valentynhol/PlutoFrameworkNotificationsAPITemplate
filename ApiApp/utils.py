@@ -68,13 +68,6 @@ class AttestationHandler:
         try:
             self._nonce = urlsafe_b64decode_padded(nonce)
             logger.debug("Nonce base64 decoded successfully")
-
-            # Debugging possible nonce mismatch
-            logger.debug(f"Nonce (base64): {nonce}")
-            logger.debug(f"Nonce (hex): {self._nonce.hex()}")
-            nonce_hash = sha256(self._nonce).digest()
-            logger.debug(f"Hash (hex): {nonce_hash.hex()}")
-            # -----
         except Exception:
             logger.exception("Nonce base64 decode failed")
             raise
@@ -223,8 +216,21 @@ class AttestationHandler:
                 not DEBUG
             )
 
+            # Decode and inspect the assertion structure
+            decoded_assertion = urlsafe_b64decode_padded(self._assertion_token)
+            try:
+                from cbor2 import loads as cbor_decode
+                unpacked = cbor_decode(decoded_assertion)
+                logger.debug(f"CBOR decoded assertion keys: {unpacked.keys()}")
+                logger.debug(f"Has authenticatorData: {'authenticatorData' in unpacked}")
+                if 'authenticatorData' in unpacked:
+                    logger.debug(f"authenticatorData length: {len(unpacked['authenticatorData'])}")
+                logger.debug(f"Has signature: {'signature' in unpacked}")
+            except Exception as e:
+                logger.debug(f"Could not decode CBOR: {e}")
+
             assertion = Assertion(
-                urlsafe_b64decode_padded(self._assertion_token),
+                decoded_assertion,
                 sha256(self._nonce).digest(),
                 self._public_key,
                 config

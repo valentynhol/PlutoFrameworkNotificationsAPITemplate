@@ -76,7 +76,12 @@ class AttestationHandler:
         self._attestation_token = attestation_token
         self._assertion_token = assertion_token
 
-        self._key_id = key_id
+        try:
+            self._key_id = urlsafe_b64decode_padded(key_id)
+        except Exception:
+            logger.exception("key_id base64 decode failed")
+            raise
+
         self._public_key = public_key
 
     def multiplatform_verify(self) -> bool:

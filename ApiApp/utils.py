@@ -68,6 +68,13 @@ class AttestationHandler:
         try:
             self._nonce = urlsafe_b64decode_padded(nonce)
             logger.debug("Nonce base64 decoded successfully")
+
+            # Debugging possible nonce mismatch
+            logger.debug(f"Nonce (base64): {nonce}")
+            logger.debug(f"Nonce (hex): {self._nonce.hex()}")
+            nonce_hash = sha256(self._nonce).digest()
+            logger.debug(f"Hash (hex): {nonce_hash.hex()}")
+            # -----
         except Exception:
             logger.exception("Nonce base64 decode failed")
             raise

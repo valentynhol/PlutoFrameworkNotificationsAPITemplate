@@ -45,12 +45,7 @@ class AttestationHandler:
             key_id: str | None = None,
             public_key: EllipticCurvePublicKey | None = None
     ):
-        logger.debug(f"AttestationHandler init:\n"
-                     f"platform={platform}\n"
-                     f"nonce={nonce}\n"
-                     f"attestation={attestation_token}\n"
-                     f"assertion={assertion_token}\n"
-                     f"key_id={key_id}")
+        logger.debug(f"AttestationHandler init: platform={platform}")
 
         if platform == "android" and attestation_token is None:
             logger.debug("Android but attestation_token is None")
@@ -183,7 +178,7 @@ class AttestationHandler:
                 logger.error("No certificates returned in attestation data")
                 return False
 
-            self._public_key = x509.load_der_x509_certificate(certs[0].dump()).public_key()
+            self._public_key = x509.load_der_x509_certificate(certs[-1].dump()).public_key()
             logger.debug("iOS attestation verification SUCCESS, public key extracted")
 
             return True

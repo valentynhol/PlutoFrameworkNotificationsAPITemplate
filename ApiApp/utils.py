@@ -45,7 +45,12 @@ class AttestationHandler:
             key_id: str | None = None,
             public_key: EllipticCurvePublicKey | None = None
     ):
-        logger.debug(f"AttestationHandler init: platform={platform}")
+        logger.debug(f"AttestationHandler init:\n"
+                     f"platform={platform}\n"
+                     f"nonce={nonce}\n"
+                     f"attestation={attestation_token}\n"
+                     f"assertion={assertion_token}\n"
+                     f"key_id={key_id}")
 
         if platform == "android" and attestation_token is None:
             logger.debug("Android but attestation_token is None")
@@ -181,19 +186,6 @@ class AttestationHandler:
             self._public_key = x509.load_der_x509_certificate(certs[0].dump()).public_key()
             logger.debug("iOS attestation verification SUCCESS, public key extracted")
 
-            # Debug: Log the extracted public key
-            try:
-                from cryptography.hazmat.primitives import serialization
-                pub_key_pem = self._public_key.public_bytes(
-                    encoding=serialization.Encoding.PEM,
-                    format=serialization.PublicFormat.SubjectPublicKeyInfo
-                )
-                logger.debug(f"[PYTHON DEBUG] Public key extracted from attestation (first 200 bytes):\n{pub_key_pem[:200]}")
-                logger.debug(f"[PYTHON DEBUG] Public key DER (hex): {self._public_key.public_bytes(encoding=serialization.Encoding.DER, format=serialization.PublicFormat.SubjectPublicKeyInfo).hex()}")
-            except Exception as e:
-                logger.exception(f"[PYTHON DEBUG] Error logging extracted public key: {e}")
-            # -----
-
             return True
 
         except PyAttestException as e:
@@ -221,31 +213,6 @@ class AttestationHandler:
             f"nonce_length={len(self._nonce) if self._nonce else 0} | "
             f"debug_mode={DEBUG}"
         )
-
-        # Debug: Log public key used for verification
-        try:
-            from cryptography.hazmat.primitives import serialization
-            pub_key_pem = self._public_key.public_bytes(
-                encoding=serialization.Encoding.PEM,
-                format=serialization.PublicFormat.SubjectPublicKeyInfo
-            )
-            logger.debug(f"Public key being used for verification (first 100 bytes):\n{pub_key_pem[:100]}")
-            logger.debug(f"Public key size: {len(pub_key_pem)} bytes")
-            logger.debug(f"Public key (hex): {pub_key_pem.hex()[:100]}...")
-        except Exception as e:
-            logger.exception(f"Error logging public key: {e}")
-        
-        # Debug: Also log authenticatorData details
-        try:
-            decoded_assertion = urlsafe_b64decode_padded(self._assertion_token)
-            from cbor2 import loads as cbor_decode
-            unpacked = cbor_decode(decoded_assertion)
-            authenticator_data = unpacked["authenticatorData"]
-            logger.debug(f"authenticatorData (hex): {authenticator_data.hex()}")
-            logger.debug(f"signature (hex): {unpacked['signature'].hex()[:100]}...")
-        except Exception as e:
-            logger.debug(f"Error inspecting assertion: {e}")
-        # -----
 
         try:
             config = AppleConfig(

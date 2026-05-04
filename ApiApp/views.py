@@ -4,12 +4,23 @@ from firebase_admin import messaging
 from rest_framework import permissions, views, status
 from rest_framework.response import Response
 
-from ApiApp.serializers import DeviceRegisterSerializer, FCMTokenSerializer
+from ApiApp.serializers import DeviceRegisterSerializer, FCMTokenSerializer, UidSerializer
 from ApiApp.auth import DeviceJWTAuthentication
 from ApiApp.permissions import IsRegisteredDevice
 from ApiApp.models import AttestedFCMDevice, Nonce
 
 logger = logging.getLogger(__name__)
+
+
+class NonceView(views.APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, _):
+        deleted = Nonce.objects.cleanup()
+        logger.debug(f"Deleted {deleted} nonce records.")
+        nonce = Nonce.objects.create_nonce()
+
+        return Response({"nonce": nonce})
 
 
 class DeviceRegisterView(views.APIView):
@@ -59,12 +70,32 @@ class FCMTokenUpdateView(views.APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class NonceView(views.APIView):
-    permission_classes = [permissions.AllowAny]
+class UidUpdateView(views.APIView):
+    permission_classes = [IsRegisteredDevice]
+    authentication_classes = [DeviceJWTAuthentication]
 
-    def post(self, _):
-        deleted = Nonce.objects.cleanup()
-        logger.debug(f"Deleted {deleted} nonce records.")
-        nonce = Nonce.objects.create_nonce()
+    serializer_class = UidSerializer
 
-        return Response({"nonce": nonce})
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+
+        if serializer.is_valid():
+            uid = serializer.validated_data['user_id']
+
+            try:
+                device = AttestedFCMDevice.objects.get(device_id=request.device_id)
+            except AttestedFCMDevice.DoesNotExist:
+                # shouldn't happen
+                return Response({'error': 'Device not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+            device.user_id = uid
+            device.save(update_fields=['user_id'])
+
+            return Response({'message': 'User identifier updated successfully.'}, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# TODO
+class SendNotification(views.APIView):
+    pass

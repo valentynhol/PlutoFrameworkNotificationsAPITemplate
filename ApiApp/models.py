@@ -12,8 +12,12 @@ from ApiCore.settings import ATTESTATION_NONCE_EXPIRY_SECONDS
 
 
 class AttestedFCMDevice(AbstractFCMDevice):
-    registration_id = models.TextField(verbose_name=_("Registration token"), unique=False, null=True)
-    public_key_pem = models.BinaryField(verbose_name=_("Public key (iOS)"), null=True, blank=True)
+    # What to identify the user with to then send notifications without using Firebase identifiers
+    # (For example, you could use wallet address)
+    user_id = models.TextField(verbose_name=_("User identifier"), unique=False, null=True)
+
+    registration_id = models.TextField(verbose_name=_("Registration token"), unique=False, null=True) # reset unique
+    public_key_der = models.BinaryField(verbose_name=_("Public key (iOS)"), null=True, blank=True)
 
     class Meta:
         indexes = []
@@ -21,17 +25,17 @@ class AttestedFCMDevice(AbstractFCMDevice):
         verbose_name_plural = "Attested FCM devices"
 
     def set_public_key(self, public_key: EllipticCurvePublicKey):
-        self.public_key_pem = public_key.public_bytes(
+        self.public_key_der = public_key.public_bytes(
             encoding=serialization.Encoding.DER,
             format=serialization.PublicFormat.SubjectPublicKeyInfo,
         )
-        self.save(update_fields=["public_key_pem"])
+        self.save(update_fields=["public_key_der"])
 
     def get_public_key(self):
-        if self.public_key_pem is None:
+        if self.public_key_der is None:
             return None
 
-        return serialization.load_der_public_key(bytes(self.public_key_pem))
+        return serialization.load_der_public_key(bytes(self.public_key_der))
 
 
 class Nonce(models.Model):

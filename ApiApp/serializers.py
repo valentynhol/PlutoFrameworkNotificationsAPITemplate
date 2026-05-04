@@ -6,8 +6,13 @@ from ApiApp.utils import generate_device_jwt, AttestationHandler
 
 logger = logging.getLogger(__name__)
 
+
 class FCMTokenSerializer(serializers.Serializer):
     fcm_token = serializers.CharField(max_length=255)
+
+
+class UidSerializer(serializers.Serializer):
+    user_id = serializers.CharField(max_length=255)
 
 
 class DeviceRegisterSerializer(serializers.Serializer):

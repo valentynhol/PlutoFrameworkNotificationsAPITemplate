@@ -32,7 +32,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='attestedfcmdevice',
-            name='public_key_pem',
+            name='public_key_der',
             field=models.BinaryField(blank=True, null=True, verbose_name='Public key (iOS)'),
         ),
     ]

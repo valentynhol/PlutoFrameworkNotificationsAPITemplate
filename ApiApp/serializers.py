@@ -15,6 +15,12 @@ class UidSerializer(serializers.Serializer):
     user_id = serializers.CharField(max_length=255)
 
 
+class NotificationPayloadSerializer(serializers.Serializer):
+    user_id = serializers.CharField(max_length=255, required=True)
+    title = serializers.CharField(max_length=150, required=True)
+    body = serializers.CharField(max_length=500, required=True)
+
+
 class DeviceRegisterSerializer(serializers.Serializer):
     nonce = serializers.CharField(max_length=255)
     device_id = serializers.CharField(max_length=255)

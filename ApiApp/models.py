@@ -14,7 +14,7 @@ from ApiCore.settings import ATTESTATION_NONCE_EXPIRY_SECONDS
 class AttestedFCMDevice(AbstractFCMDevice):
     # What to identify the user with to then send notifications without using Firebase identifiers
     # (For example, you could use wallet address)
-    user_id = models.TextField(verbose_name=_("User identifier"), unique=False, null=True)
+    uid = models.TextField(verbose_name=_("User identifier"), unique=False, null=True)
 
     registration_id = models.TextField(verbose_name=_("Registration token"), unique=False, null=True) # reset unique
     public_key_der = models.BinaryField(verbose_name=_("Public key (iOS)"), null=True, blank=True)

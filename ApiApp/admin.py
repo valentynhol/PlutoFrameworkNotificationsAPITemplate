@@ -10,7 +10,7 @@ admin.site.unregister(FCMDevice)
 class AttestedFCMDeviceAdmin(admin.ModelAdmin):
     list_display = (
         "id",
-        "user_id",
+        "uid",
         "name",
         "type",
         "device_id",

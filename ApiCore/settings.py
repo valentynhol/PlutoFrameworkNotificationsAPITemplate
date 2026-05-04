@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 import os
 import json
+from datetime import timedelta
 
 from pathlib import Path
 from dotenv import load_dotenv
@@ -58,17 +59,6 @@ PLAY_INTEGRITY_CONFIG = GooglePlayIntegrityApiConfig(
         GOOGLE_PLAY_INTEGRITY_APP_SIGNING_KEY
     ]
 )
-
-# Auth
-
-JWT_ACCESS_TOKEN_LIFETIME_SECONDS = 60 * 5
-JWT_REFRESH_TOKEN_LIFETIME_SECONDS = 60 * 60 * 24 * 20
-
-# TODO: remove
-# DEBUG .ENV EXPOSURE
-if DEBUG:
-    JWT_ACCESS_TOKEN_LIFETIME_SECONDS = int(os.getenv('JWT_ACCESS_TTL'))
-    JWT_REFRESH_TOKEN_LIFETIME_SECONDS = int(os.getenv('JWT_REFRESH_TTL'))
 
 # Application definition
 
@@ -160,6 +150,14 @@ FCM_DJANGO_SETTINGS = {
      # are deleted upon receiving error response from FCM
      # default: False
     "DELETE_INACTIVE_DEVICES": True,
+}
+
+# DRF Simple JWT
+# https://django-rest-framework-simplejwt.readthedocs.io/en/latest/settings.html
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=20),
 }
 
 # Password validation

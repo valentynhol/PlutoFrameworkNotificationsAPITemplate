@@ -14,5 +14,5 @@ class DeviceJWTAuthentication(JWTAuthentication):
             return None
 
         validated_token = self.get_validated_token(raw_token)
-        request.device_uuid = validated_token.get('device_id')
+        request.device_id = validated_token.get('device_id')
         return None, validated_token

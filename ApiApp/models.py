@@ -1,58 +1,76 @@
-import secrets
+from datetime import timedelta
 
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePublicKey
 from django.db import models
 from django.utils import timezone
-from fcm_django.models import FCMDevice
+from fcm_django.models import AbstractFCMDevice
+from django.utils.translation import gettext_lazy as _
 
+from ApiApp.managers import NonceManager
 from ApiCore.settings import ATTESTATION_NONCE_EXPIRY_SECONDS
-from ApiApp import utils
 
 
-class AttestedFCMDevice(FCMDevice):
-    attest_nonce = models.CharField(max_length=255, null=True, blank=True)
-    attest_nonce_created_at = models.DateTimeField(null=True, blank=True)
+class AttestedFCMDevice(AbstractFCMDevice):
+    # What to identify the user with to then send notifications without using Firebase identifiers
+    # (For example, you could use wallet address)
+    uid = models.TextField(verbose_name=_("User identifier"), unique=False, null=True)
+
+    registration_id = models.TextField(verbose_name=_("Registration token"), unique=False, null=True) # reset unique
+    public_key_der = models.BinaryField(verbose_name=_("Public key (iOS)"), null=True, blank=True)
 
     class Meta:
         indexes = []
         verbose_name = "Attested FCM device"
         verbose_name_plural = "Attested FCM devices"
 
-    def generate_nonce(self, length: int = 32) -> str:
+    def set_public_key(self, public_key: EllipticCurvePublicKey):
+        self.public_key_der = public_key.public_bytes(
+            encoding=serialization.Encoding.DER,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo,
+        )
+        self.save(update_fields=["public_key_der"])
+
+    def get_public_key(self):
+        if self.public_key_der is None:
+            return None
+
+        return serialization.load_der_public_key(bytes(self.public_key_der))
+
+
+class Nonce(models.Model):
+    nonce = models.CharField(verbose_name=_("Nonce"), max_length=255, primary_key=True)
+    created_at = models.DateTimeField(verbose_name=_("Nonce created at"), db_index=True)
+    consumed = models.BooleanField(verbose_name=_("Consumed"), default=False)
+
+    objects = NonceManager()
+
+    class Meta:
+        verbose_name = "Nonce"
+        verbose_name_plural = "Nonces"
+
+    def consume(self) -> bool:
         """
-        Generate a cryptographically secure random nonce,
-        store it in the device, and return it.
+        Consume the nonce if valid.
+        Returns:
+             bool: True if the nonce is consumed, False otherwise.
         """
-        self.attest_nonce = secrets.token_urlsafe(length)
-        self.attest_nonce_created_at = timezone.now()
-        self.save(update_fields=["attest_nonce", "attest_nonce_created_at"])
-        return self.attest_nonce
+        cutoff = timezone.now() - timedelta(
+            seconds=ATTESTATION_NONCE_EXPIRY_SECONDS
+        )
 
-    def is_nonce_valid(self) -> bool:
-        """
-        Check if the nonce exists and is not expired.
-        Expiry is controlled by NONCE_EXPIRY_SECONDS in settings.
-        """
-        if not self.attest_nonce or not self.attest_nonce_created_at:
-            return False
+        updated = (
+            Nonce.objects
+            .filter(
+                nonce=self.nonce,
+                consumed=False,
+                created_at__gte=cutoff
+            )
+            .update(consumed=True)
+        )
 
-        age = (timezone.now() - self.attest_nonce_created_at).total_seconds()
-        return age <= ATTESTATION_NONCE_EXPIRY_SECONDS
+        if updated == 1:
+            self.consumed = True
+            return True
 
-    def clear_nonce(self):
-        self.attest_nonce = None
-        self.attest_nonce_created_at = None
-        self.save(update_fields=["attest_nonce", "attest_nonce_created_at"])
-
-    def verify_attestation(self, attest_token: str) -> bool:
-        """
-        Verify attestation for this device using its stored nonce.
-        """
-        if not self.is_nonce_valid():
-            return False
-
-        verified = utils.verify_attestation(attest_token, self.attest_nonce.encode(), self.type)
-
-        if verified:
-            self.clear_nonce()
-
-        return verified
+        return False

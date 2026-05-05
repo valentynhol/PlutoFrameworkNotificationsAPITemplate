@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 import os
 import json
+from datetime import timedelta
 
 from pathlib import Path
 from dotenv import load_dotenv
@@ -40,19 +41,22 @@ ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS").split(",")
 # App attestation
 
 APK_NAME = os.getenv('APK_NAME')
-ATTESTATION_DECRYPTION_KEY = os.getenv('ATTESTATION_DECRYPTION_KEY', "")
-ATTESTATION_VERIFICATION_KEY = os.getenv('ATTESTATION_VERIFICATION_KEY', "")
-ATTESTATION_APP_SIGNING_KEY = os.getenv('ATTESTATION_APP_SIGNING_KEY', "")
+APP_ATTEST_APP_ID = os.getenv('APP_ATTEST_APP_ID')
 ATTESTATION_NONCE_EXPIRY_SECONDS = 120
+ATTESTATION_NONCE_CLEANUP_TIMEOUT_SECONDS = 300
+
+GOOGLE_PLAY_INTEGRITY_DECRYPTION_KEY = os.getenv('GOOGLE_PLAY_INTEGRITY_DECRYPTION_KEY')
+GOOGLE_PLAY_INTEGRITY_VERIFICATION_KEY = os.getenv('GOOGLE_PLAY_INTEGRITY_VERIFICATION_KEY')
+GOOGLE_PLAY_INTEGRITY_APP_SIGNING_KEY = os.getenv('GOOGLE_PLAY_INTEGRITY_APP_SIGNING_KEY')
 
 PLAY_INTEGRITY_CONFIG = GooglePlayIntegrityApiConfig(
-    decryption_key=ATTESTATION_DECRYPTION_KEY,
-    verification_key=ATTESTATION_VERIFICATION_KEY,
+    decryption_key=GOOGLE_PLAY_INTEGRITY_DECRYPTION_KEY,
+    verification_key=GOOGLE_PLAY_INTEGRITY_VERIFICATION_KEY,
     apk_package_name=APK_NAME,
     production=not DEBUG,
-    allow_non_play_distribution=DEBUG,
+    allow_non_play_distribution=True,
     verify_code_signature_hex=[
-        ATTESTATION_APP_SIGNING_KEY
+        GOOGLE_PLAY_INTEGRITY_APP_SIGNING_KEY
     ]
 )
 
@@ -66,6 +70,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework_api_key',
     'fcm_django',
     'rest_framework_simplejwt',
     'ApiApp',
@@ -100,7 +105,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'ApiCore.wsgi.application'
-
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -149,6 +153,14 @@ FCM_DJANGO_SETTINGS = {
     "DELETE_INACTIVE_DEVICES": True,
 }
 
+# DRF Simple JWT
+# https://django-rest-framework-simplejwt.readthedocs.io/en/latest/settings.html
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=20),
+}
+
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
@@ -186,3 +198,27 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Logging
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+
+    "formatters": {
+        "verbose": {
+            "format": "%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+        },
+    },
+
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+    },
+
+    "root": {
+        "handlers": ["console"],
+        "level": "DEBUG" if DEBUG else "INFO",
+    },
+}

@@ -108,7 +108,7 @@ class SendNotificationView(views.APIView):
         title = serializer.validated_data['title']
         body = serializer.validated_data['body']
 
-        devices = AttestedFCMDevice.objects.filter(user_id=user_id).exclude(registration_id__isnull=True)
+        devices = AttestedFCMDevice.objects.filter(uid=user_id).exclude(registration_id__isnull=True)
 
         if not devices.exists():
             return Response(

@@ -64,7 +64,7 @@ class FCMTokenUpdateView(views.APIView):
         topics = ['global', device.type]
         for topic in topics:
             try:
-                device.subscribe_to_topic(topic)
+                messaging.subscribe_to_topic([device.registration_id], topic)
             except Exception as e:
                 logger.debug(f'Failed to subscribe device {device.id} to topic {topic}: {e}')
 
@@ -81,7 +81,7 @@ class UidUpdateView(views.APIView):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        uid = serializer.validated_data['uid']
+        uid = serializer.validated_data['user_id']
 
         try:
             device = AttestedFCMDevice.objects.get(device_id=request.device_id)

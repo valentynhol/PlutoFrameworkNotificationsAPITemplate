@@ -104,7 +104,7 @@ class SendNotificationView(views.APIView):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        user_id = serializer.validated_data['uid']
+        user_id = serializer.validated_data['user_id']
         title = serializer.validated_data['title']
         body = serializer.validated_data['body']
 
